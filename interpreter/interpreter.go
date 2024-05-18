@@ -25,7 +25,7 @@ func formatWhileCounter() string {
 	s := ""
 	for key, value := range WhileCounter {
 		k := fmt.Sprintf("%s: %d", key, value)
-		//TODO コード中に謎の改行があるので除去したいs
+		//TODO コード中に謎の改行があるので除去したい
 		s += strings.ReplaceAll(k, "\n", "")
 		s += "\n"
 	}
@@ -144,11 +144,8 @@ func (i *Interpreter) runExpression(ctx context.Context, expr ast.Expression) er
 			return fmt.Errorf("%w: %d to pointer overflow, on %d:%d", ErrMemoryOverflow, i.Pointer, e.StartPos(), e.EndPos())
 		}
 		pt := i.Pointer
-		for {
+		for i.Memory[pt] != 0 {
 			pt += e.Leap
-			if i.Memory[pt] != 0 {
-				break
-			}
 		}
 		i.Pointer = pt
 		i.Counter.ZEROSHIFT += 1
