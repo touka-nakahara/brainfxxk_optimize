@@ -134,23 +134,22 @@ func (o *Optimizer) optimizeExpressions(exprs []ast.Expression) ([]ast.Expressio
 						if moveF, ok := (opBody[1]).(*ast.MOVE); ok {
 							var moveValue int
 							var copyPlace int
-							if moveF.Count >= 1 {
-								moveValue += moveF.Count
-								copyPlace += moveF.Count
-								if moveB, ok := (opBody[3]).(*ast.MOVE); ok {
-									moveValue += moveB.Count
-									if moveValue == 0 {
-										var multiplier int
-										if calcM, ok := (opBody[2]).(*ast.CALC); ok {
-											multiplier = calcM.Value
-											// COPYに置き換える
-											optExpr = &ast.COPY{
-												Pos:        exprs.StartPosition,
-												CopyPlace:  copyPlace,
-												Multiplier: multiplier,
-											}
-											break
+							moveValue += moveF.Count
+							copyPlace += moveF.Count
+							if moveB, ok := (opBody[3]).(*ast.MOVE); ok {
+								moveValue += moveB.Count
+								if moveValue == 0 {
+									// fmt.Println(copyPlace)
+									var multiplier int
+									if calcM, ok := (opBody[2]).(*ast.CALC); ok {
+										multiplier = calcM.Value
+										// COPYに置き換える
+										optExpr = &ast.COPY{
+											Pos:        exprs.StartPosition,
+											CopyPlace:  copyPlace,
+											Multiplier: multiplier,
 										}
+										break
 									}
 								}
 							}

@@ -158,14 +158,17 @@ func (i *Interpreter) runExpression(ctx context.Context, expr ast.Expression) er
 		if i.Pointer == len(i.Memory)-1 && i.Config.RaiseErrorOnOverflow {
 			return fmt.Errorf("%w: %d to pointer overflow, on %d:%d", ErrMemoryOverflow, i.Pointer, e.StartPos(), e.EndPos())
 		}
-		// 今いる場所の値をメモ
-		multiplier := int(i.Memory[i.Pointer])
-		// 指定の場所に指定の倍数コピーする
-		place := i.Pointer + e.CopyPlace
-		i.Memory[place] += byte(multiplier * e.Multiplier)
-		// 今いる場所をZeroにする
-		i.Memory[i.Pointer] = 0
-		i.Counter.COPY += 1
+
+		if i.Memory[i.Pointer] != 0 {
+			// 今いる場所の値をメモ
+			multiplier := int(i.Memory[i.Pointer])
+			// 指定の場所に指定の倍数コピーする
+			place := i.Pointer + e.CopyPlace
+			i.Memory[place] += byte(multiplier * e.Multiplier)
+			// 今いる場所をZeroにする
+			i.Memory[i.Pointer] = 0
+			i.Counter.COPY += 1
+		}
 
 	case *ast.PointerIncrementExpression:
 		if i.Pointer == len(i.Memory)-1 && i.Config.RaiseErrorOnOverflow {
