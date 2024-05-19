@@ -25,6 +25,11 @@ func TestInterpreter(t *testing.T) {
 		input    string
 		expected string
 	}{
+		// {
+		// 	source:   "+++++++++++[->>+<<]",
+		// 	input:    "",
+		// 	expected: "",
+		// },
 		{
 			source:   mand,
 			input:    "",

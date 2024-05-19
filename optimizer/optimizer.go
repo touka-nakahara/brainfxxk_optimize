@@ -124,30 +124,35 @@ func (o *Optimizer) optimizeExpressions(exprs []ast.Expression) ([]ast.Expressio
 			}
 
 			// COPY [->+<]
-			// if len(opBody) >= 4 {
-			// 	var plusPlace []int
-			// 	// 最初がマイナスから始まっている
-			// 	if calc, ok := opBody[0].(*ast.CALC); ok {
-			// 		if calc.Value == -1 {
-			// 			// > と　< の数が同じ
-			// 			// ついでに+の位置を覚えておく
-			// 			incptcnt := 0
-			// 			descptcnt := 0
-			// 			for _, exp := range opBody[1:] {
-			// 				if ex, ok := exp.(*ast.MOVE); ok {
-			// 					if ex.Count > 0 {
-			// 						incptcnt += ex.Count
-			// 						plusPlace = append(plusPlace, incptcnt)
-			// 					} else {
-			// 						descptcnt += ex.Count
+			// whileの中身が4つの命令でできているかをチェックする
+			// if len(opBody) == 4 {
+			// 	// 4つの中身がすべてCOPYと同じかをチェックする
+			// 	if w, ok := (opBody[0]).(*ast.CALC); ok {
+			// 		if w.Value == -1 {
+			// 			var moveValue int
+			// 			var copyPlace int
+			// 			// ><の移動数が同じかどうかをチェックする
+			// 			if w, ok := (opBody[1]).(*ast.MOVE); ok {
+			// 				moveValue += w.Count
+			// 				copyPlace += w.Count
+			// 				if w, ok := (opBody[3]).(*ast.MOVE); ok {
+			// 					moveValue += w.Count
+			// 					if moveValue == 0 {
+			// 						var multiplier int
+			// 						if w, ok := (opBody[2]).(*ast.CALC); ok {
+			// 							if w.Value == 1 {
+			// 								multiplier = w.Value
+			// 								// COPYに置き換える
+			// 								optExpr = &ast.COPY{
+			// 									Pos:        exprs.StartPosition,
+			// 									CopyPlace:  copyPlace,
+			// 									Multiplier: multiplier,
+			// 								}
+			// 								break
+			// 							}
+			// 						}
 			// 					}
 			// 				}
-			// 			}
-			// 			if incptcnt == descptcnt {
-
-			// 			}
-			// 			optExpr = &ast.COPY{
-			// 				CopyPlace: plusPlace,
 			// 			}
 			// 		}
 			// 	}

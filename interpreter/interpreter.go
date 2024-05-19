@@ -49,8 +49,8 @@ type StepCounter struct {
 
 func (sc *StepCounter) String() string {
 	sum := sc.MOVE + sc.CALC + sc.Output + sc.Input + sc.While + sc.Other
-	return fmt.Sprintf("\n\n[Sum of Expr] %d\n[List of Expr] MOVE: %d, CALC: %d, IncPt: %d, DescPt: %d, IncVal: %d, DescVal: %d,  Output: %d, Input: %d, While: %d, ZERORESET: %d, Other: %d \n [Loops]: \n%s",
-		sum, sc.MOVE, sc.CALC, sc.IncPt, sc.DescPt, sc.IntVal, sc.DecVal, sc.Output, sc.Input, sc.While, sc.ZERORESET, sc.Other, formatWhileCounter())
+	return fmt.Sprintf("\n\n[Sum of Expr] %d\n[List of Expr] MOVE: %d, CALC: %d, IncPt: %d, DescPt: %d, IncVal: %d, DescVal: %d,  Output: %d, Input: %d, While: %d, ZEROSHIFT: %d, ZERORESET: %d, Other: %d \n[Loops]: \n%s",
+		sum, sc.MOVE, sc.CALC, sc.IncPt, sc.DescPt, sc.IntVal, sc.DecVal, sc.Output, sc.Input, sc.While, sc.ZEROSHIFT, sc.ZERORESET, sc.Other, formatWhileCounter())
 }
 
 type Interpreter struct {
@@ -146,16 +146,30 @@ func (i *Interpreter) runExpression(ctx context.Context, expr ast.Expression) er
 		pt := i.Pointer
 		for i.Memory[pt] != 0 {
 			pt += e.Leap
+			if pt == len(i.Memory)-1 && i.Config.RaiseErrorOnOverflow {
+				return fmt.Errorf("%w: %d to pointer overflow, on %d:%d", ErrMemoryOverflow, pt, e.StartPos(), e.EndPos())
+			}
 		}
 		i.Pointer = pt
 		i.Counter.ZEROSHIFT += 1
 
-	case *ast.PointerIncrementExpression:
-		if i.Pointer == len(i.Memory)-1 && i.Config.RaiseErrorOnOverflow {
-			return fmt.Errorf("%w: %d to pointer overflow, on %d:%d", ErrMemoryOverflow, i.Pointer, e.StartPos(), e.EndPos())
-		}
-		i.Pointer += 1
-		i.Counter.Other += 1
+	// case *ast.COPY:
+	// 	if i.Pointer == len(i.Memory)-1 && i.Config.RaiseErrorOnOverflow {
+	// 		return fmt.Errorf("%w: %d to pointer overflow, on %d:%d", ErrMemoryOverflow, i.Pointer, e.StartPos(), e.EndPos())
+	// 	}
+	// 	// 今いる場所の値をメモ
+	// 	multiplier := int(i.Memory[i.Pointer])
+	// 	// 今いる場所をZeroにする
+	// 	i.Memory[i.Pointer] = 0
+	// 	// 指定の場所に指定の倍数コピーする
+	// 	i.Memory[i.Pointer+e.CopyPlace] = byte(multiplier * e.Multiplier)
+
+	// case *ast.PointerIncrementExpression:
+	// 	if i.Pointer == len(i.Memory)-1 && i.Config.RaiseErrorOnOverflow {
+	// 		return fmt.Errorf("%w: %d to pointer overflow, on %d:%d", ErrMemoryOverflow, i.Pointer, e.StartPos(), e.EndPos())
+	// 	}
+	// 	i.Pointer += 1
+	// 	i.Counter.Other += 1
 	case *ast.PointerDecrementExpression:
 		if i.Pointer == 0 && i.Config.RaiseErrorOnOverflow {
 			return fmt.Errorf("%w: %d to pointer underflow, on %d:%d", ErrMemoryOverflow, i.Pointer, e.StartPos(), e.EndPos())

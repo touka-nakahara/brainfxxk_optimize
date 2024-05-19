@@ -15,7 +15,7 @@ func TestOptimizer(t *testing.T) {
 	f, _ := os.Open("../example/mandelbrot.bf")
 	buf, _ := io.ReadAll(f)
 	mand := string(buf)
-	mand = "[[>>>>>>>>>]+[<<<<<<<<<]>>>>>>>>>-]"
+	// mand = "[->+<]"
 	testCases := []struct {
 		source   string
 		expected string

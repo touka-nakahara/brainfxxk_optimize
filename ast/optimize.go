@@ -97,8 +97,9 @@ func (e *ZEROSHIFT) String() string {
 }
 
 type COPY struct {
-	Pos       int
-	CopyPlace []int
+	Pos        int
+	CopyPlace  int
+	Multiplier int
 }
 
 func (e *COPY) StartPos() int {
