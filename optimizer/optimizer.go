@@ -100,6 +100,7 @@ func (o *Optimizer) optimizeExpressions(exprs []ast.Expression) ([]ast.Expressio
 			if err != nil {
 				return nil, err
 			}
+
 			// ZERO RESET
 			if len(opBody) == 1 {
 				// - オペランドが入っていることをチェック
@@ -125,38 +126,38 @@ func (o *Optimizer) optimizeExpressions(exprs []ast.Expression) ([]ast.Expressio
 
 			// COPY [->+<]
 			// whileの中身が4つの命令でできているかをチェックする
-			// if len(opBody) == 4 {
-			// 	// 4つの中身がすべてCOPYと同じかをチェックする
-			// 	if w, ok := (opBody[0]).(*ast.CALC); ok {
-			// 		if w.Value == -1 {
-			// 			var moveValue int
-			// 			var copyPlace int
-			// 			// ><の移動数が同じかどうかをチェックする
-			// 			if w, ok := (opBody[1]).(*ast.MOVE); ok {
-			// 				moveValue += w.Count
-			// 				copyPlace += w.Count
-			// 				if w, ok := (opBody[3]).(*ast.MOVE); ok {
-			// 					moveValue += w.Count
-			// 					if moveValue == 0 {
-			// 						var multiplier int
-			// 						if w, ok := (opBody[2]).(*ast.CALC); ok {
-			// 							if w.Value == 1 {
-			// 								multiplier = w.Value
-			// 								// COPYに置き換える
-			// 								optExpr = &ast.COPY{
-			// 									Pos:        exprs.StartPosition,
-			// 									CopyPlace:  copyPlace,
-			// 									Multiplier: multiplier,
-			// 								}
-			// 								break
-			// 							}
-			// 						}
-			// 					}
-			// 				}
-			// 			}
-			// 		}
-			// 	}
-			// }
+			if len(opBody) == 4 {
+				// 4つの中身がすべてCOPYと同じかをチェックする
+				if calc, ok := (opBody[0]).(*ast.CALC); ok {
+					if calc.Value == -1 {
+						// ><の移動数が同じかどうかをチェックする
+						if moveF, ok := (opBody[1]).(*ast.MOVE); ok {
+							var moveValue int
+							var copyPlace int
+							if moveF.Count >= 1 {
+								moveValue += moveF.Count
+								copyPlace += moveF.Count
+								if moveB, ok := (opBody[3]).(*ast.MOVE); ok {
+									moveValue += moveB.Count
+									if moveValue == 0 {
+										var multiplier int
+										if calcM, ok := (opBody[2]).(*ast.CALC); ok {
+											multiplier = calcM.Value
+											// COPYに置き換える
+											optExpr = &ast.COPY{
+												Pos:        exprs.StartPosition,
+												CopyPlace:  copyPlace,
+												Multiplier: multiplier,
+											}
+											break
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
 
 			optExpr.(*ast.WhileExpression).Body = opBody
 		}

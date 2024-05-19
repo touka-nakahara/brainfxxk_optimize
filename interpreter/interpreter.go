@@ -44,13 +44,14 @@ type StepCounter struct {
 	DecVal    int
 	ZERORESET int
 	ZEROSHIFT int
+	COPY      int
 	Other     int
 }
 
 func (sc *StepCounter) String() string {
 	sum := sc.MOVE + sc.CALC + sc.Output + sc.Input + sc.While + sc.Other
-	return fmt.Sprintf("\n\n[Sum of Expr] %d\n[List of Expr] MOVE: %d, CALC: %d, IncPt: %d, DescPt: %d, IncVal: %d, DescVal: %d,  Output: %d, Input: %d, While: %d, ZEROSHIFT: %d, ZERORESET: %d, Other: %d \n[Loops]: \n%s",
-		sum, sc.MOVE, sc.CALC, sc.IncPt, sc.DescPt, sc.IntVal, sc.DecVal, sc.Output, sc.Input, sc.While, sc.ZEROSHIFT, sc.ZERORESET, sc.Other, formatWhileCounter())
+	return fmt.Sprintf("\n\n[Sum of Expr] %d\n[List of Expr] MOVE: %d, CALC: %d, IncPt: %d, DescPt: %d, IncVal: %d, DescVal: %d,  Output: %d, Input: %d, While: %d, ZEROSHIFT: %d, ZERORESET: %d, COPY: %d, Other: %d \n[Loops]: \n%s",
+		sum, sc.MOVE, sc.CALC, sc.IncPt, sc.DescPt, sc.IntVal, sc.DecVal, sc.Output, sc.Input, sc.While, sc.ZEROSHIFT, sc.ZERORESET, sc.COPY, sc.Other, formatWhileCounter())
 }
 
 type Interpreter struct {
@@ -153,23 +154,26 @@ func (i *Interpreter) runExpression(ctx context.Context, expr ast.Expression) er
 		i.Pointer = pt
 		i.Counter.ZEROSHIFT += 1
 
-	// case *ast.COPY:
-	// 	if i.Pointer == len(i.Memory)-1 && i.Config.RaiseErrorOnOverflow {
-	// 		return fmt.Errorf("%w: %d to pointer overflow, on %d:%d", ErrMemoryOverflow, i.Pointer, e.StartPos(), e.EndPos())
-	// 	}
-	// 	// 今いる場所の値をメモ
-	// 	multiplier := int(i.Memory[i.Pointer])
-	// 	// 今いる場所をZeroにする
-	// 	i.Memory[i.Pointer] = 0
-	// 	// 指定の場所に指定の倍数コピーする
-	// 	i.Memory[i.Pointer+e.CopyPlace] = byte(multiplier * e.Multiplier)
+	case *ast.COPY:
+		if i.Pointer == len(i.Memory)-1 && i.Config.RaiseErrorOnOverflow {
+			return fmt.Errorf("%w: %d to pointer overflow, on %d:%d", ErrMemoryOverflow, i.Pointer, e.StartPos(), e.EndPos())
+		}
+		// 今いる場所の値をメモ
+		multiplier := int(i.Memory[i.Pointer])
+		// 指定の場所に指定の倍数コピーする
+		place := i.Pointer + e.CopyPlace
+		i.Memory[place] += byte(multiplier * e.Multiplier)
+		// 今いる場所をZeroにする
+		i.Memory[i.Pointer] = 0
+		i.Counter.COPY += 1
 
-	// case *ast.PointerIncrementExpression:
-	// 	if i.Pointer == len(i.Memory)-1 && i.Config.RaiseErrorOnOverflow {
-	// 		return fmt.Errorf("%w: %d to pointer overflow, on %d:%d", ErrMemoryOverflow, i.Pointer, e.StartPos(), e.EndPos())
-	// 	}
-	// 	i.Pointer += 1
-	// 	i.Counter.Other += 1
+	case *ast.PointerIncrementExpression:
+		if i.Pointer == len(i.Memory)-1 && i.Config.RaiseErrorOnOverflow {
+			return fmt.Errorf("%w: %d to pointer overflow, on %d:%d", ErrMemoryOverflow, i.Pointer, e.StartPos(), e.EndPos())
+		}
+		i.Pointer += 1
+		i.Counter.Other += 1
+
 	case *ast.PointerDecrementExpression:
 		if i.Pointer == 0 && i.Config.RaiseErrorOnOverflow {
 			return fmt.Errorf("%w: %d to pointer underflow, on %d:%d", ErrMemoryOverflow, i.Pointer, e.StartPos(), e.EndPos())
