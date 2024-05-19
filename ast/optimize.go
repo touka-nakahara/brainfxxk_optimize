@@ -22,7 +22,8 @@ func (e *MOVE) Bytes() []byte {
 }
 
 func (e *MOVE) String() string {
-	return string(e.Bytes())
+	// return string(e.Bytes())
+	return "M"
 }
 
 type CALC struct {
@@ -47,7 +48,8 @@ func (e *CALC) Bytes() []byte {
 }
 
 func (e *CALC) String() string {
-	return string(e.Bytes())
+	// return string(e.Bytes())
+	return "C"
 }
 
 type ZERORESET struct {
@@ -63,7 +65,7 @@ func (e *ZERORESET) EndPos() int {
 }
 
 func (e *ZERORESET) Bytes() []byte {
-	return []byte{'0'}
+	return []byte{'Z'}
 }
 
 func (e *ZERORESET) String() string {
@@ -98,8 +100,9 @@ func (e *ZEROSHIFT) String() string {
 
 type COPY struct {
 	Pos        int
-	CopyPlace  int
-	Multiplier int
+	CopyPlace  []int
+	Multiplier []int
+	Debug      []Expression
 }
 
 func (e *COPY) StartPos() int {
@@ -111,7 +114,7 @@ func (e *COPY) EndPos() int {
 }
 
 func (e *COPY) Bytes() []byte {
-	return []byte{'C'}
+	return []byte{'P'}
 }
 
 func (e *COPY) String() string {

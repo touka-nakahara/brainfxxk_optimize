@@ -46,12 +46,13 @@ type StepCounter struct {
 	ZEROSHIFT int
 	COPY      int
 	Other     int
+	Comment   int
 }
 
 func (sc *StepCounter) String() string {
 	sum := sc.MOVE + sc.CALC + sc.Output + sc.Input + sc.While + sc.Other
-	return fmt.Sprintf("\n\n[Sum of Expr] %d\n[List of Expr] MOVE: %d, CALC: %d, IncPt: %d, DescPt: %d, IncVal: %d, DescVal: %d,  Output: %d, Input: %d, While: %d, ZEROSHIFT: %d, ZERORESET: %d, COPY: %d, Other: %d \n[Loops]: \n%s",
-		sum, sc.MOVE, sc.CALC, sc.IncPt, sc.DescPt, sc.IntVal, sc.DecVal, sc.Output, sc.Input, sc.While, sc.ZEROSHIFT, sc.ZERORESET, sc.COPY, sc.Other, formatWhileCounter())
+	return fmt.Sprintf("\n\n[Sum of Expr] %d\n[List of Expr] MOVE: %d, CALC: %d, IncPt: %d, DescPt: %d, IncVal: %d, DescVal: %d,  Output: %d, Input: %d, While: %d, ZEROSHIFT: %d, ZERORESET: %d, COPY: %d, Other: %d Comment: %d, \n[Loops]: \n%s",
+		sum, sc.MOVE, sc.CALC, sc.IncPt, sc.DescPt, sc.IntVal, sc.DecVal, sc.Output, sc.Input, sc.While, sc.ZEROSHIFT, sc.ZERORESET, sc.COPY, sc.Other, sc.Comment, formatWhileCounter())
 }
 
 type Interpreter struct {
@@ -83,6 +84,8 @@ func NewInterpreter(p *ast.Program, c *Config) *Interpreter {
 
 func (i *Interpreter) Run(ctx context.Context) error {
 	p, err := optimizer.NewOptimizer().Optimize(i.Program)
+	fmt.Printf("%#v\n", p.Expressions)
+	// fmt.Println(p.Expressions)
 	if err != nil {
 		return err
 	}
@@ -163,12 +166,18 @@ func (i *Interpreter) runExpression(ctx context.Context, expr ast.Expression) er
 			// 今いる場所の値をメモ
 			multiplier := int(i.Memory[i.Pointer])
 			// 指定の場所に指定の倍数コピーする
-			place := i.Pointer + e.CopyPlace
-			i.Memory[place] += byte(multiplier * e.Multiplier)
-			// 今いる場所をZeroにする
-			i.Memory[i.Pointer] = 0
-			i.Counter.COPY += 1
+			place := i.Pointer
+			for idx := range e.Multiplier {
+				place += e.CopyPlace[idx]
+				i.Memory[place] += byte(multiplier * e.Multiplier[idx])
+				// 今いる場所をZeroにする
+				i.Memory[i.Pointer] = 0
+				i.Counter.COPY += 1
+			}
 		}
+
+	case *ast.Comment:
+		i.Counter.Comment += 1
 
 	case *ast.PointerIncrementExpression:
 		if i.Pointer == len(i.Memory)-1 && i.Config.RaiseErrorOnOverflow {

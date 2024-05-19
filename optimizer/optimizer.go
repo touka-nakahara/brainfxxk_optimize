@@ -96,6 +96,7 @@ func (o *Optimizer) optimizeExpressions(exprs []ast.Expression) ([]ast.Expressio
 		case *ast.WhileExpression:
 			exprs := optExpr.(*ast.WhileExpression)
 			// 中に入って最適化
+
 			opBody, err := o.optimizeExpressions(exprs.Body)
 			if err != nil {
 				return nil, err
@@ -133,16 +134,16 @@ func (o *Optimizer) optimizeExpressions(exprs []ast.Expression) ([]ast.Expressio
 						// ><の移動数が同じかどうかをチェックする
 						if moveF, ok := (opBody[1]).(*ast.MOVE); ok {
 							var moveValue int
-							var copyPlace int
+							var copyPlace []int
 							moveValue += moveF.Count
-							copyPlace += moveF.Count
+							copyPlace = append(copyPlace, moveF.Count)
 							if moveB, ok := (opBody[3]).(*ast.MOVE); ok {
 								moveValue += moveB.Count
 								if moveValue == 0 {
 									// fmt.Println(copyPlace)
-									var multiplier int
+									var multiplier []int
 									if calcM, ok := (opBody[2]).(*ast.CALC); ok {
-										multiplier = calcM.Value
+										multiplier = append(multiplier, calcM.Value)
 										// COPYに置き換える
 										optExpr = &ast.COPY{
 											Pos:        exprs.StartPosition,
@@ -154,6 +155,70 @@ func (o *Optimizer) optimizeExpressions(exprs []ast.Expression) ([]ast.Expressio
 								}
 							}
 						}
+					}
+				}
+			}
+
+			// COPY [->+<]
+			// whileの中身が4つの命令でできているかをチェックする
+			if len(opBody) >= 4 {
+				// 初期値が-かチェック
+				if calc, ok := (opBody[0]).(*ast.CALC); ok {
+					if calc.Value == -1 {
+						var moveValue int
+						var multipliers []int
+						var copyPlaces []int
+						flag := true
+						// コメント除去
+						var expsWithoutComment []ast.Expression
+						for _, exp := range opBody[1:] {
+							switch e := exp.(type) {
+							case *ast.Comment:
+								continue
+							default:
+								expsWithoutComment = append(expsWithoutComment, e)
+							}
+						}
+
+						var insertCount int
+						for idx, exp := range expsWithoutComment {
+							switch e := exp.(type) {
+							case *ast.CALC:
+								multipliers = append(multipliers, e.Value)
+							case *ast.MOVE:
+								moveValue += e.Count
+								// 挿入できないときは次がある + 自分がMOVEで次がMOVE
+								// 挿入できるときは自分がMOVEで次がMOVEじゃない時, 挿入できる また 最後もできる
+								// 次がある
+								insertFlag := true
+								if idx+1 <= len(expsWithoutComment)-1 {
+									// 次もMOVE
+									if _, ok := expsWithoutComment[idx+1].(*ast.MOVE); ok {
+										insertFlag = false
+										insertCount += e.Count
+									}
+								}
+								if insertFlag && moveValue != 0 {
+									copyPlaces = append(copyPlaces, e.Count+insertCount)
+									insertCount = 0
+								}
+							case *ast.Comment:
+								continue
+							default:
+								flag = false
+							}
+						}
+
+						if moveValue == 0 && flag {
+							optExpr = &ast.COPY{
+								Pos:        exprs.StartPosition,
+								CopyPlace:  copyPlaces,
+								Multiplier: multipliers,
+								Debug:      expsWithoutComment,
+							}
+							break
+						}
+
 					}
 				}
 			}
